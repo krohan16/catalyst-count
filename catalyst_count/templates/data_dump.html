@@ -1,0 +1,72 @@
+{% extends 'base_page.html' %}
+
+{% block content %}
+
+{% if messages %}
+{% for msg in messages %}
+<p {% if msg.tags %} class="p-3 alert-{{msg.tags}}" {% endif %}>{{msg}}</p>
+{% endfor %}
+{% endif %}
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    var percentage = 0;
+    var progressTimeout;
+    var file_processing = {{ file_processing }};
+    console.log(file_processing)
+
+    function makeProgress(){
+        $.ajax({
+            url: `/api/upload_percentages/`,
+            method: "GET",
+            dataType: "json",
+            success: function (response) {
+                percentage = response.percentage;
+                if (percentage < 100) {
+                    $(".progress-bar").css("width", percentage + "%").text(percentage + " %");
+                    progressTimeout = setTimeout(makeProgress, 2000);  // Set timeout only when not complete
+                } else {
+                    // Clear the timeout when progress is complete
+                    clearTimeout(progressTimeout);
+
+                    // Final progress set to 100%
+                    $(".progress-bar").css("width", "100%").text("100%");
+                    $(".progress-bar").parent().fadeOut(function () {
+                        // Show success message after fading out the progress bar
+                    });
+                    $(".success-message").fadeIn().text("Upload completed successfully!");
+                }
+            },
+            error: function () {
+                alert("Error loading country data");
+            },
+        });
+    }
+    if(file_processing)
+        makeProgress();
+</script>
+
+<div class="container mt-5">
+    <form action="{% url 'csv-upload-form' %}" method="post" enctype="multipart/form-data" >
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="csv_file">Upload CSV</label>
+            <input 
+                class="form-control-file" 
+                type="file" 
+                name="csv_file" 
+                id="csv_file" 
+                accept=".csv">
+        </div>
+        <button class="btn btn-primary" type="submit">Submit form</button>
+    </form>
+    <div class="progress mt-2" style="width: 200px;">
+        <div class="progress-bar" style="width: 1px;">
+        </div>
+    </div>
+    <div class="success-message" style="display: none;"></div>
+
+</div>
+
+{% endblock %}

@@ -1,0 +1,151 @@
+{% extends 'base_page.html' %}
+
+{% block title %}
+<title>Query generator</title>
+{% endblock %}
+
+{% block content %}
+
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<script>
+    let industryPage = 1, countryPage = 1;
+    let isIndustryLoading = false, isYearFoundedLoading = false, isCountryLoading = false;
+    let allIndustriesLoaded = false, allYearFoundedLoaded = false, allCountriesLoaded = false;
+
+    $(document).ready(function () {
+        const industryDropdown = $("#industry");
+        const countryDropdown = $("#country");
+
+        // Industry Dropdown
+        industryDropdown.on("focus", function () {
+            if (industryDropdown.children("option").length === 1) {
+                loadIndustryData(industryPage);
+            }
+        });
+
+        industryDropdown.on("scroll", function () {
+            if (
+                industryDropdown[0].scrollHeight - industryDropdown.scrollTop() <= industryDropdown.outerHeight() &&
+                !isIndustryLoading &&
+                !allIndustriesLoaded
+            ) {
+                industryPage++;
+                loadIndustryData(industryPage);
+            }
+        });
+        // Country Dropdown
+        countryDropdown.on("focus", function () {
+            if (countryDropdown.children("option").length === 1) {
+                loadCountryData(countryPage);
+            }
+        });
+
+        countryDropdown.on("scroll", function () {
+            if (
+                countryDropdown[0].scrollHeight - countryDropdown.scrollTop() <= countryDropdown.outerHeight() &&
+                !isCountryLoading &&
+                !allCountriesLoaded
+            ) {
+                countryPage++;
+                loadCountryData(countryPage);
+            }
+        });
+
+        // Function to load industry data
+        function loadIndustryData(page) {
+            isIndustryLoading = true;
+            $.ajax({
+                url: `/api/company_query_filter/?field=industry&page=${page}`,
+                method: "GET",
+                dataType: "json",
+                success: function (response) {
+                    if (response.results && response.results.length) {
+                        response.results.forEach((industry) => {
+                            industryDropdown.append(`<option value="${industry.industry}">${industry.industry}</option>`);
+                        });
+                    } else {
+                        allIndustriesLoaded = true;
+                    }
+                    isIndustryLoading = false;
+                },
+                error: function () {
+                    alert("Error loading industry data");
+                    isIndustryLoading = false;
+                },
+            });
+        }
+
+
+        // Function to load country data
+        function loadCountryData(page) {
+            isCountryLoading = true;
+            $.ajax({
+                url: `/api/company_query_filter/?field=country&page=${page}`,
+                method: "GET",
+                dataType: "json",
+                success: function (response) {
+                    if (response.results && response.results.length) {
+                        response.results.forEach((country) => {
+                            countryDropdown.append(`<option value="${country.country}">${country.country}</option>`);
+                        });
+                    } else {
+                        allCountriesLoaded = true;
+                    }
+                    isCountryLoading = false;
+                },
+                error: function () {
+                    alert("Error loading country data");
+                    isCountryLoading = false;
+                },
+            });
+        }
+    });
+</script>
+
+{% if messages %}
+{% for msg in messages %}
+<p {% if msg.tags %} class="p-3 alert-{{msg.tags}}" {% endif %}>{{msg}}</p>
+{% endfor %}
+{% endif %}
+
+<div class="container">
+    <h5 class="mt-4 mb-3"> Query count : {{count}}</h5>
+</div>
+<div class="container">
+    <form action="{% url 'company-query-count-form' %}" method="post">
+        {% csrf_token %}
+        <div class="form-group">
+            <label for="name">Name</label>
+            <input class="form-control" type="text" name="name" id="name" placeholder="Company name" value="{% if prefill_name %}{{prefill_name}}{% endif %}">
+        </div>
+
+        <div class="form-group">
+            <label for="industry">Industry</label>
+            <select class="form-control" name="industry" id="industry" onfocus='this.size=10;' onblur='this.size=1;'
+                onchange='this.size=1; this.blur();'>
+                <option>{% if prefill_industry %} {{prefill_industry}} {% else %} select {% endif %}</option>
+                <!-- Dynamic options will be loaded here -->
+            </select>
+        </div>
+
+        <div class="form-group">
+            <label for="year_founded">Year Founded</label>
+            <input class="form-control" type="number" name="year_founded" id="year_founded"
+                placeholder="Enter year (e.g., 2000)" min="1800" max="2099" step="1" value="{{prefill_year_founded}}">
+        </div>
+
+        <div class="form-group">
+            <label for="country">Country</label>
+            <select class="form-control" name="country" id="country" onfocus='this.size=10;' onblur='this.size=1;'
+                onchange='this.size=1; this.blur();'>
+                <option>{% if prefill_country %} {{prefill_country}} {% else %} select {% endif %}</option>
+                <!-- Dynamic options will be loaded here -->
+            </select>
+        </div>
+
+        <button class="btn btn-primary" type="submit">Submit form</button>
+    </form>
+</div>
+
+{% endblock %}
