@@ -2,20 +2,17 @@ from datetime import datetime
 from django.shortcuts import render,redirect
 from rest_framework.views import APIView,Response
 from rest_framework.parsers import MultiPartParser
-from io import TextIOWrapper
 import pandas as pd
 from django.db import transaction
 from rest_framework.generics import ListAPIView
 from core.services import csv_file_process
-from core.serializers import CompanyCountrySerializer, CompanyIndustrySerializer, CompanyYearSerializer, NameSearchSerializer,UserSerializer
+from core.serializers import CompanyCountrySerializer, CompanyIndustrySerializer, CompanyYearSerializer, NameSearchSerializer
 from core.models import Company
-from django.contrib.auth.models import User
 from rest_framework.filters import SearchFilter
-from rest_framework.pagination import PageNumberPagination
 from django_filters.rest_framework import DjangoFilterBackend
 from django.http import JsonResponse
-from django.core.cache import cache
 from hashlib import md5
+from django.core.cache import cache
 
 
 class CsvUpload(APIView):
@@ -48,15 +45,17 @@ class CsvUpload(APIView):
                     Company.objects.bulk_create(company_objs,batch_size=10000)
     
     def post(self, request):
-        initial_time = datetime.now()
         file = request.FILES.get('csv_file')
         if not file :
             return Response ({'error': 'No response provided'},400)
         
         key_name = md5('progress'.encode("utf-8")).hexdigest()
         print(key_name)
+        cache.set(f'{request.user.id}_processing_file',key_name)
+        print('current_user_file : ',cache.get(f'{request.user.id}_processing_file',''))
         csv_file_process(file,key_name)
-        return Response({'message':'File uploading in process.'})
+        return render(request, 'data_dump.html',{'file_processing':1, 'processing_file': file.name})
+        # return Response({'message':'File uploading in progress.'})
                 
         
 class CompanyFieldListView(ListAPIView):
@@ -75,8 +74,7 @@ class CompanyFieldListView(ListAPIView):
             return Company.objects.values('industry').distinct().order_by('industry')
         if field == 'country':
             return Company.objects.values('country').distinct().order_by('country')
-        
-        
+
     
     def get_serializer_class(self):
         field = self.request.query_params.get('field')
@@ -129,7 +127,6 @@ def query_count_generator(request):
     industry = request.POST.get('industry')
     year_founded = request.POST.get('year_founded')
     country = request.POST.get('country')
-    print(name,industry,year_founded,country)
     
     queryset = Company.objects.all()
     
@@ -141,8 +138,7 @@ def query_count_generator(request):
         queryset = queryset.filter(year_founded = year_founded)
     if country and not country == 'select':
         queryset = queryset.filter(country = country)
-    print(queryset.count)
-    # prefill_values = {'prefill_name':name, 'prefill_industry':industry, 'prefill_year_founded':year_founded, 'prefill_country':country}
+        
     return render(request,
                   'query_count_generator.html',
                   {'count':queryset.count(),
@@ -150,23 +146,25 @@ def query_count_generator(request):
                    'prefill_industry':industry, 
                    'prefill_year_founded':year_founded, 
                    'prefill_country':country})
-    
-import random
 
 def upload_percentages(request):
-    percentage = random.randint(1,200)
-    print(percentage)
-    return JsonResponse({'percentage':percentage})
+    if not request.user.is_authenticated:
+        return redirect('account_login')
+    if request.method == 'GET':
+        percentage = 0
+        rdb_key = cache.get(f'{request.user.id}_processing_file','')
+        if rdb_key:
+            percentage = cache.get(rdb_key,0)
+        return JsonResponse({'percentage':percentage})
         
-
+        
 def csv_upload(request):
     if not request.user.is_authenticated:
         return redirect('account_login')
     if request.method == 'GET':
-        return render(request, 'data_dump.html',{'file_processing':1})
+        return render(request, 'data_dump.html')
     if request.method == 'POST':
         result = CsvUpload().post(request)
-        print('result', result)
     
         
 def dashboard(request):

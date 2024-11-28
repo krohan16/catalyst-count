@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'core',
     'chunked_upload',
-    'rest_framework_simplejwt',
+    # 'rest_framework_simplejwt',
     'debug_toolbar',
     'drf_spectacular',
     'django_filters',
@@ -100,9 +100,9 @@ AUTHENTICATION_BACKENDS = (
 
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    ),
+    # 'DEFAULT_AUTHENTICATION_CLASSES': (
+    #     'rest_framework_simplejwt.authentication.JWTAuthentication',
+    # ),
     'DEFAULT_PERMISSION_CLASSES': (
         'rest_framework.permissions.IsAuthenticated',
     ),

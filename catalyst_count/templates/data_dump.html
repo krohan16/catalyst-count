@@ -57,7 +57,7 @@
                 type="file" 
                 name="csv_file" 
                 id="csv_file" 
-                accept=".csv">
+                accept=".csv", placeholder="{% if processing_file %}{{processing_file}}{% endif %} ">
         </div>
         <button class="btn btn-primary" type="submit">Submit form</button>
     </form>

@@ -24,8 +24,3 @@ class NameSearchSerializer(serializers.ModelSerializer):
         model = Company
         fields = ['name']
     
-        
-class UserSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = User
-        fields = ['id', 'username']
