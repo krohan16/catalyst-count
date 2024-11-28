@@ -71,9 +71,9 @@ class CompanyFieldListView(ListAPIView):
         if not field:
             return Response({'error':'missing required param field.'},400)
         if field == 'industry':
-            return Company.objects.values('industry').distinct().order_by('industry')
+            return Company.objects.values('industry').distinct()
         if field == 'country':
-            return Company.objects.values('country').distinct().order_by('country')
+            return Company.objects.values('industry').distinct()
 
     
     def get_serializer_class(self):

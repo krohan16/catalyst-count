@@ -10,5 +10,4 @@ urlpatterns = [
     path("count/", QueryCountGeneratorView.as_view(), name="company-query-count-api"),
     path("query_count/", query_count_generator, name="company-query-count-form"),    
     path("upload_percentages/", upload_percentages, name="upload-percentages"),    
-    
 ]
